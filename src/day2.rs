@@ -8,7 +8,7 @@ pub fn generator(input: &str) -> Vec<i32> {
 
 #[aoc(day2, part1)]
 pub fn part1(input: &[i32]) -> i32 {
-    let mut input: Vec<i32> = input.iter().map(|i| *i).collect();
+    let mut input: Vec<i32> = input.iter().copied().collect();
 
     input[1] = 12;
     input[2] = 2;
@@ -18,7 +18,7 @@ pub fn part1(input: &[i32]) -> i32 {
 
 #[aoc(day2, part2)]
 pub fn part2(input: &[i32]) -> i32 {
-    let input: Vec<i32> = input.iter().map(|i| *i).collect();
+    let input: Vec<i32> = input.iter().copied().collect();
 
     for verb in 0..99 {
         for noun in 0..99 {

@@ -1,5 +1,7 @@
 use aoc_runner_derive::aoc;
 use aoc_runner_derive::aoc_generator;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ops;
 use std::str::FromStr;
 
@@ -11,17 +13,11 @@ enum Direction {
     Down(i32),
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Coordinate(i32, i32);
 
-#[derive(Debug, Copy, Clone)]
-struct Segment {
-    from: Coordinate,
-    to: Coordinate,
-}
-
 #[derive(Debug)]
-pub struct Wire(Vec<Segment>);
+pub struct Wire(Vec<Direction>);
 
 #[aoc_generator(day3)]
 pub fn generator(input: &str) -> (Wire, Wire) {
@@ -32,26 +28,62 @@ pub fn generator(input: &str) -> (Wire, Wire) {
 #[aoc(day3, part1)]
 pub fn part1(input: &(Wire, Wire)) -> i32 {
     let (wire_a, wire_b) = input;
-    let mut shortest_dist = std::i32::MAX;
+    let mut wire_a_path = HashSet::new();
+    let mut wire_b_path = HashSet::new();
 
-    for (i, seg1) in wire_a.0.iter().enumerate() {
-        for seg2 in wire_b.0.iter().skip(i) {
-            if let Some(intersection) = seg1.intersection(*seg2) {
-                let dist = intersection.manhattan();
-                if dist != 0 && dist < shortest_dist {
-                    shortest_dist = dist;
-                }
-            }
+    for coord in wire_a.traverse() {
+        wire_a_path.insert(coord);
+    }
+
+    for coord in wire_b.traverse() {
+        wire_b_path.insert(coord);
+    }
+
+    let mut shortest = std::i32::MAX;
+    for coord in wire_a_path.intersection(&wire_b_path) {
+        let dist = coord.manhattan();
+        if dist < shortest {
+            shortest = dist
         }
     }
 
-    shortest_dist
+    shortest
 }
 
-// #[aoc(day3, part2)]
-// pub fn part2(input: &[i32]) -> i32 {
-//     0
-// }
+#[aoc(day3, part2)]
+pub fn part2(input: &(Wire, Wire)) -> i32 {
+    let (wire_a, wire_b) = input;
+    let mut wire_a_steps = HashMap::new();
+    let mut wire_b_steps = HashMap::new();
+    let mut wire_a_path = HashSet::new();
+    let mut wire_b_path = HashSet::new();
+
+    let wire_a_coords = wire_a.traverse();
+    for (i, coord) in wire_a_coords.iter().enumerate() {
+        wire_a_path.insert(coord);
+        if !wire_a_steps.contains_key(coord) {
+            wire_a_steps.insert(coord, i as i32 + 1);
+        }
+    }
+
+    let wire_b_coords = wire_b.traverse();
+    for (i, coord) in wire_b_coords.iter().enumerate() {
+        wire_b_path.insert(coord);
+        if !wire_b_steps.contains_key(coord) {
+            wire_b_steps.insert(coord, i as i32 + 1);
+        }
+    }
+
+    let mut min_steps = std::i32::MAX;
+    for coord in wire_a_path.intersection(&wire_b_path) {
+        let steps = wire_a_steps.get(coord).unwrap() + wire_b_steps.get(coord).unwrap();
+        if steps < min_steps {
+            min_steps = steps
+        }
+    }
+
+    min_steps
+}
 
 impl FromStr for Direction {
     type Err = !;
@@ -72,52 +104,40 @@ impl FromStr for Direction {
 impl FromStr for Wire {
     type Err = !;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut origin = Coordinate(0, 0);
-        let mut segments = Vec::new();
-
-        for dir in s
-            .split(',')
-            .map(|s| s.parse().unwrap())
-            .collect::<Vec<Direction>>()
-        {
-            let to = match dir {
-                Direction::Left(dist) => Coordinate(origin.0 - dist, origin.1),
-                Direction::Right(dist) => Coordinate(origin.0 + dist, origin.1),
-                Direction::Up(dist) => Coordinate(origin.0, origin.1 - dist),
-                Direction::Down(dist) => Coordinate(origin.0, origin.1 + dist),
-            };
-
-            segments.push(Segment { from: origin, to });
-            origin = to;
-        }
-
-        Ok(Wire(segments))
+        Ok(Wire(
+            s.split(',')
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<Direction>>(),
+        ))
     }
 }
 
-impl Segment {
-    fn intersection(&self, other: Segment) -> Option<Coordinate> {
-        let p = self.from;
-        let q = other.from;
-        let r = self.to - p;
-        let s = other.to - q;
+impl Wire {
+    fn traverse(&self) -> Vec<Coordinate> {
+        let mut origin = Coordinate(0, 0);
+        let mut coords = Vec::new();
 
-        let u = (q - p).cross(r) / r.cross(s);
+        for dir in &self.0 {
+            let (delta, dist) = match dir {
+                Direction::Left(dist) => (Coordinate(-1, 0), *dist),
+                Direction::Right(dist) => (Coordinate(1, 0), *dist),
+                Direction::Up(dist) => (Coordinate(0, -1), *dist),
+                Direction::Down(dist) => (Coordinate(0, 1), *dist),
+            };
 
-        if r.cross(s) != 0.0 && u >= 0.0 && u <= 1.0 {
-            Some(p + p * u as i32)
-        } else {
-            None
+            for _ in 0..dist {
+                let coord = origin + delta;
+                coords.push(coord);
+                origin = coord;
+            }
         }
+
+        coords
     }
 }
 
 impl Coordinate {
-    fn cross(&self, other: Coordinate) -> f32 {
-        (self.0 * other.0 - self.1 * other.1) as f32
-    }
-
-    fn manhattan(&self) -> i32 {
+    fn manhattan(self) -> i32 {
         (self.0 + self.1).abs()
     }
 }
