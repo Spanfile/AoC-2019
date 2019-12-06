@@ -25,7 +25,7 @@ pub fn part2(input: &[i32]) -> i32 {
             memory[1] = noun;
             memory[2] = verb;
 
-            if intcode(memory) == 19690720 {
+            if intcode(memory) == 19_690_720 {
                 return 100 * noun + verb;
             }
         }
