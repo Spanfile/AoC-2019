@@ -1,5 +1,4 @@
-use aoc_runner_derive::aoc;
-use aoc_runner_derive::aoc_generator;
+use aoc_runner_derive::{aoc, aoc_generator};
 
 #[derive(Debug, Copy, Clone)]
 enum Opcode {

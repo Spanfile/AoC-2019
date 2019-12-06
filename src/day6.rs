@@ -1,9 +1,9 @@
-use aoc_runner_derive::aoc;
-use aoc_runner_derive::aoc_generator;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::rc::Rc;
+use aoc_runner_derive::{aoc, aoc_generator};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 #[derive(Debug)]
 struct Object {

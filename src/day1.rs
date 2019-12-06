@@ -1,5 +1,4 @@
-use aoc_runner_derive::aoc;
-use aoc_runner_derive::aoc_generator;
+use aoc_runner_derive::{aoc, aoc_generator};
 
 #[aoc_generator(day1)]
 pub fn generator(input: &str) -> Vec<f64> {

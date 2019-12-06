@@ -1,9 +1,9 @@
-use aoc_runner_derive::aoc;
-use aoc_runner_derive::aoc_generator;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::ops;
-use std::str::FromStr;
+use aoc_runner_derive::{aoc, aoc_generator};
+use std::{
+    collections::{HashMap, HashSet},
+    ops,
+    str::FromStr,
+};
 
 #[derive(Debug, Copy, Clone)]
 enum Direction {

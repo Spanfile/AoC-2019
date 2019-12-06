@@ -1,5 +1,4 @@
-use aoc_runner_derive::aoc;
-use aoc_runner_derive::aoc_generator;
+use aoc_runner_derive::{aoc, aoc_generator};
 use std::collections::HashMap;
 
 #[aoc_generator(day4)]
