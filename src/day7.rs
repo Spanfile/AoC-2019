@@ -1,4 +1,4 @@
-use super::intcode::intcode;
+use super::intcode::IntcodeVM;
 use aoc_runner_derive::{aoc, aoc_generator};
 use permutohedron::Heap;
 
@@ -30,7 +30,53 @@ pub fn part1(input: &[i64]) -> i64 {
 }
 
 fn amplifier(memory: &[i64], phase: i64, signal: i64) -> i64 {
-    let mut input = vec![signal, phase];
-    let mut memory: Vec<i64> = memory.iter().copied().collect();
-    intcode(&mut memory, &mut input)
+    let memory: Vec<i64> = memory.iter().copied().collect();
+    let mut vm = IntcodeVM::new(memory);
+    vm.input(signal);
+    vm.input(phase);
+    vm.get_next_output().unwrap()
+}
+
+#[aoc(day7, part2)]
+pub fn part2(input: &[i64]) -> i64 {
+    let memory: Vec<i64> = input.iter().copied().collect();
+    let mut max_signal = std::i64::MIN;
+    let mut phases = vec![5, 6, 7, 8, 9];
+    let heap = Heap::new(&mut phases);
+
+    for phase_perm in heap {
+        let mut amp_a = IntcodeVM::new(memory.clone());
+        let mut amp_b = IntcodeVM::new(memory.clone());
+        let mut amp_c = IntcodeVM::new(memory.clone());
+        let mut amp_d = IntcodeVM::new(memory.clone());
+        let mut amp_e = IntcodeVM::new(memory.clone());
+
+        amp_a.input(phase_perm[0]);
+        amp_a.input(0);
+        amp_b.input(phase_perm[1]);
+        amp_c.input(phase_perm[2]);
+        amp_d.input(phase_perm[3]);
+        amp_e.input(phase_perm[4]);
+
+        let signal = loop {
+            let mut final_output = 0;
+            if let Some(output) = amp_a.get_next_output() {
+                amp_b.input(output);
+                amp_c.input(amp_b.get_next_output().unwrap());
+                amp_d.input(amp_c.get_next_output().unwrap());
+                amp_e.input(amp_d.get_next_output().unwrap());
+                final_output = amp_e.get_next_output().unwrap();
+                amp_a.input(final_output);
+            } else {
+                break final_output;
+            }
+        };
+
+        if signal > max_signal {
+            println!("{:?} -> {}", phase_perm, signal);
+            max_signal = signal
+        }
+    }
+
+    max_signal
 }

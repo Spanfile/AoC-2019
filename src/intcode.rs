@@ -1,3 +1,11 @@
+#[derive(Debug)]
+pub struct IntcodeVM {
+    original_memory: Vec<i64>,
+    memory: Vec<i64>,
+    ip: usize,
+    input: Vec<i64>,
+}
+
 #[derive(Debug, Copy, Clone)]
 enum Opcode {
     Add(Parameter, Parameter, Parameter),
@@ -172,25 +180,35 @@ impl Parameter {
     }
 }
 
-pub fn intcode(memory: &mut [i64], input: &mut Vec<i64>) -> i64 {
-    let mut program_output = 0;
-
-    let mut instruction_pointer = 0;
-    loop {
-        let opcode = Opcode::from_memory(instruction_pointer, &memory);
-
-        match opcode.execute(memory, input) {
-            OpcodeOutput::Halt => break,
-            OpcodeOutput::Output(value) => program_output = value,
-            OpcodeOutput::Jump(ip) => {
-                instruction_pointer = ip;
-                continue;
-            }
-            _ => (),
+impl IntcodeVM {
+    pub fn new(memory: Vec<i64>) -> IntcodeVM {
+        IntcodeVM {
+            original_memory: memory.clone(),
+            memory,
+            ip: 0,
+            input: Vec::new(),
         }
-
-        instruction_pointer += opcode.len();
     }
 
-    program_output
+    pub fn input(&mut self, value: i64) {
+        self.input.push(value);
+    }
+
+    pub fn get_next_output(&mut self) -> Option<i64> {
+        loop {
+            let opcode = Opcode::from_memory(self.ip, &self.memory);
+
+            match opcode.execute(&mut self.memory, &mut self.input) {
+                OpcodeOutput::Halt => break None,
+                OpcodeOutput::Output(value) => break Some(value),
+                OpcodeOutput::Jump(ip) => {
+                    self.ip = ip;
+                    continue;
+                }
+                _ => (),
+            }
+
+            self.ip += opcode.len();
+        }
+    }
 }
