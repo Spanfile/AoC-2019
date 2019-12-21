@@ -1,9 +1,10 @@
+use std::collections::VecDeque;
+
 #[derive(Debug)]
 pub struct IntcodeVM {
-    original_memory: Vec<i64>,
     memory: Vec<i64>,
     ip: usize,
-    input: Vec<i64>,
+    input: VecDeque<i64>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -97,7 +98,7 @@ impl Opcode {
         }
     }
 
-    fn execute(self, memory: &mut [i64], input: &mut Vec<i64>) -> OpcodeOutput {
+    fn execute(self, memory: &mut [i64], input: &mut VecDeque<i64>) -> OpcodeOutput {
         match self {
             Self::Add(p1, p2, dest) => {
                 memory[dest.position()] = p1.evaluate(memory) + p2.evaluate(memory);
@@ -108,7 +109,7 @@ impl Opcode {
                 OpcodeOutput::None
             }
             Self::Input(dest) => {
-                memory[dest.position()] = input.pop().unwrap();
+                memory[dest.position()] = input.pop_front().unwrap();
                 OpcodeOutput::None
             }
             Self::Output(dest) => OpcodeOutput::Output(dest.evaluate(memory)),
@@ -147,11 +148,12 @@ impl Opcode {
     }
 
     fn len(self) -> usize {
-        match self {
-            Self::Add(..) | Self::Mul(..) | Self::LessThan(..) | Self::Equals(..) => 4,
-            Self::JumpIfTrue(..) | Self::JumpIfFalse(..) => 3,
-            Self::Input(..) | Self::Output(..) => 2,
-            Self::Halt => 1,
+        // length of opcode + length of parameters
+        1 + match self {
+            Self::Add(..) | Self::Mul(..) | Self::LessThan(..) | Self::Equals(..) => 3,
+            Self::JumpIfTrue(..) | Self::JumpIfFalse(..) => 2,
+            Self::Input(..) | Self::Output(..) => 1,
+            Self::Halt => 0,
         }
     }
 }
@@ -183,15 +185,14 @@ impl Parameter {
 impl IntcodeVM {
     pub fn new(memory: Vec<i64>) -> IntcodeVM {
         IntcodeVM {
-            original_memory: memory.clone(),
             memory,
             ip: 0,
-            input: Vec::new(),
+            input: VecDeque::new(),
         }
     }
 
     pub fn input(&mut self, value: i64) {
-        self.input.push(value);
+        self.input.push_back(value);
     }
 
     pub fn get_next_output(&mut self) -> Option<i64> {
@@ -200,7 +201,10 @@ impl IntcodeVM {
 
             match opcode.execute(&mut self.memory, &mut self.input) {
                 OpcodeOutput::Halt => break None,
-                OpcodeOutput::Output(value) => break Some(value),
+                OpcodeOutput::Output(value) => {
+                    self.ip += opcode.len();
+                    break Some(value);
+                }
                 OpcodeOutput::Jump(ip) => {
                     self.ip = ip;
                     continue;

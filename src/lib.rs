@@ -1,3 +1,5 @@
+#![feature(never_type)]
+
 use aoc_runner_derive::aoc_lib;
 
 mod intcode;

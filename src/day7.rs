@@ -32,8 +32,8 @@ pub fn part1(input: &[i64]) -> i64 {
 fn amplifier(memory: &[i64], phase: i64, signal: i64) -> i64 {
     let memory: Vec<i64> = memory.iter().copied().collect();
     let mut vm = IntcodeVM::new(memory);
-    vm.input(signal);
     vm.input(phase);
+    vm.input(signal);
     vm.get_next_output().unwrap()
 }
 
@@ -52,25 +52,38 @@ pub fn part2(input: &[i64]) -> i64 {
         let mut amp_e = IntcodeVM::new(memory.clone());
 
         amp_a.input(phase_perm[0]);
-        amp_a.input(0);
         amp_b.input(phase_perm[1]);
         amp_c.input(phase_perm[2]);
         amp_d.input(phase_perm[3]);
         amp_e.input(phase_perm[4]);
 
-        let signal = loop {
-            let mut final_output = 0;
-            if let Some(output) = amp_a.get_next_output() {
-                amp_b.input(output);
-                amp_c.input(amp_b.get_next_output().unwrap());
-                amp_d.input(amp_c.get_next_output().unwrap());
-                amp_e.input(amp_d.get_next_output().unwrap());
-                final_output = amp_e.get_next_output().unwrap();
-                amp_a.input(final_output);
+        let mut signal = 0;
+        amp_a.input(0);
+
+        loop {
+            if let Some(amp_a_out) = amp_a.get_next_output() {
+                amp_b.input(amp_a_out);
+                let amp_b_out = amp_b.get_next_output().unwrap();
+
+                amp_c.input(amp_b_out);
+                let amp_c_out = amp_c.get_next_output().unwrap();
+
+                amp_d.input(amp_c_out);
+                let amp_d_out = amp_d.get_next_output().unwrap();
+
+                amp_e.input(amp_d_out);
+                signal = amp_e.get_next_output().unwrap();
+
+                amp_a.input(signal);
+
+            // println!(
+            //     "a: {}, b: {}, c: {}, d: {}, e: {}, phase: {:?}",
+            //     amp_a_out, amp_b_out, amp_c_out, amp_d_out, signal,
+            // phase_perm );
             } else {
-                break final_output;
+                break;
             }
-        };
+        }
 
         if signal > max_signal {
             println!("{:?} -> {}", phase_perm, signal);
